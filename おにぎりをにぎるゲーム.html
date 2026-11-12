@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>おにぎりをにぎる</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eaf1ea;--ink:#1d2b24;--sub:#5d6f65;--acc:#c7364a;--card:#f8fbf6;--line:#cfdccf;--rice:#fffdf6;--nori:#17231d;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#111a15;--ink:#eaf2ea;--sub:#93a69b;--acc:#e0566a;--card:#1a2620;--line:#2c3d34}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#111a15;--ink:#eaf2ea;--sub:#93a69b;--acc:#e0566a;--card:#1a2620;--line:#2c3d34}
+*{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+main{max-width:440px;margin:0 auto;padding:14px 18px 22px;display:flex;flex-direction:column;gap:10px;min-height:100svh}
+h1{font-size:20px;font-weight:900;margin:0;letter-spacing:.04em}
+#steps{display:flex;gap:6px;margin:0;padding:0;list-style:none}
+#steps li{flex:1;text-align:center;font-size:13px;padding:6px 0;border-bottom:3px solid var(--line);color:var(--sub)}
+#steps li.on{border-color:var(--acc);color:var(--ink);font-weight:900}
+#steps li.ok{border-color:var(--ink);color:var(--ink)}
+svg{width:100%;max-height:40svh;transition:transform .12s}
+svg.press{transform:scale(1.03,.97)}
+#gs{transform-box:view-box;transform-origin:100px 150px;transition:transform .12s}
+#gr{transform-box:view-box;transform-origin:100px 113px;transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
+#bd{fill:var(--rice);stroke:var(--line);stroke-width:1.5}
+#hint{margin:0;min-height:2.8em;font-size:14px;line-height:1.5;color:var(--sub)}
+#ctl{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:10px}.row button{flex:1}
+button{font:inherit;font-weight:900;font-size:17px;min-height:56px;border-radius:16px;border:2px solid var(--line);background:var(--card);color:var(--ink);touch-action:manipulation;cursor:pointer;width:100%}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+button:active{transform:translateY(1px)}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+#res{display:flex;flex-direction:column;gap:10px}
+#res[hidden]{display:none}
+.top{display:flex;align-items:baseline;gap:14px}
+.rk{font-size:72px;font-weight:900;line-height:1;color:var(--acc)}
+.sc{font-size:26px;font-weight:900}
+.cm{margin:0;font-size:17px;line-height:1.5;font-weight:900}
+.bar{display:grid;grid-template-columns:4.5em 1fr 2.4em;gap:8px;align-items:center;font-size:13px;color:var(--sub)}
+.bar i{height:8px;border-radius:4px;background:var(--line);position:relative;overflow:hidden}
+.bar i::after{content:"";position:absolute;inset:0;width:var(--w);background:var(--ink)}
+.bar b{text-align:right;color:var(--ink)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body><main>
+<h1>おにぎりをにぎる</h1>
+<ol id="steps"><li>ごはん</li><li>しお</li><li>にぎる</li></ol>
+<svg id="st" viewBox="0 -4 200 190" aria-label="おにぎり">
+<ellipse cx="100" cy="156" rx="80" ry="9" fill="var(--line)"/>
+<g id="gs"><g id="gr">
+<clipPath id="cp"><path id="cd"/></clipPath>
+<path id="bd"/><g id="grain"></g><g id="salt"></g>
+<rect id="nori" x="78" y="112" width="44" height="40" rx="3" fill="var(--nori)" clip-path="url(#cp)" style="display:none"/>
+</g></g>
+<path id="mk" d="M92 -2h16l-8 11z" fill="var(--acc)" style="display:none"/>
+</svg>
+<p id="hint"></p>
+<div id="ctl" oncontextmenu="return false"></div>
+<section id="res" hidden></section>
+</main>
+<script>
+const $=s=>document.querySelector(s),svg=$('#st'),gs=$('#gs'),gr=$('#gr'),bd=$('#bd'),cd=$('#cd'),nori=$('#nori'),sl=$('#salt'),hint=$('#hint'),ctl=$('#ctl'),res=$('#res'),mk=$('#mk');
+const V=[[100,40],[160,150],[40,150]],C=[100,113],NS='http://www.w3.org/2000/svg';
+let st,sd=7,R;
+const rnd=()=>(sd=sd*16807%2147483647)/2147483647;
+const pt=m=>{const a=rnd()*6.283,r=Math.sqrt(rnd())*m;return[100+Math.cos(a)*r,118+Math.sin(a)*r*.9]};
+const mkEl=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e)};
+for(let i=0;i<16;i++){const p=pt(24);mkEl('ellipse',{cx:p[0],cy:p[1],rx:4.5,ry:2,transform:`rotate(${rnd()*180} ${p[0]} ${p[1]})`,fill:'none',stroke:'var(--line)','stroke-width':1.2},$('#grain'))}
+function rp(P,r){let d='';const n=P.length;for(let i=0;i<n;i++){const p=P[i],a=P[(i+n-1)%n],b=P[(i+1)%n];
+const f=q=>{const dx=q[0]-p[0],dy=q[1]-p[1],l=Math.hypot(dx,dy),k=Math.min(r[i],l*.48)/l;return[p[0]+dx*k,p[1]+dy*k]};
+const s=f(a),e=f(b);d+=(i?'L':'M')+s[0].toFixed(1)+' '+s[1].toFixed(1)+'Q'+p[0].toFixed(1)+' '+p[1].toFixed(1)+' '+e[0].toFixed(1)+' '+e[1].toFixed(1)}return d+'Z'}
+function draw(){
+const r=st.sharp.map(s=>4+(1-Math.min(Math.max(s,0),1))*56);
+const P=V.map((v,i)=>{const c=Math.max(0,st.sharp[i]-1)*.5;return[v[0]+(C[0]-v[0])*c,v[1]+(C[1]-v[1])*c]});
+const d=rp(P,r);bd.setAttribute('d',d);cd.setAttribute('d',d);
+gs.style.transform=`scale(${.55+st.rice/100*.7})`;gr.style.transform=`rotate(${st.rot}deg)`;
+bd.style.fill=st.hard>.5?'#eadcb8':'';
+}
+function reset(){
+st={ph:0,rice:0,salt:0,sharp:[0,0,0],hard:0,cur:0,rot:0,hold:null,hv:0};
+sl.innerHTML='';nori.style.display='none';res.hidden=true;
+gr.style.transition='none';draw();void gr.offsetWidth;gr.style.transition='';ui();
+}
+function bindHold(el,mode){
+const on=e=>{e.preventDefault();if(e.pointerId!=null)try{el.setPointerCapture(e.pointerId)}catch(_){}
+st.hold=mode;st.hv=0;svg.classList.toggle('press',mode=='sq')};
+const off=()=>{st.hold=null;svg.classList.remove('press')};
+el.addEventListener('pointerdown',on);
+['pointerup','pointercancel','lostpointercapture'].forEach(v=>el.addEventListener(v,off));
+el.addEventListener('keydown',e=>{if((e.key==' '||e.key=='Enter')&&!e.repeat)on(e)});
+el.addEventListener('keyup',off);
+}
+function addSalt(){
+if(st.salt>=12)return;st.salt++;
+for(let i=0;i<2;i++){const p=pt(28);mkEl('circle',{cx:p[0],cy:p[1]-6,r:1.8,fill:'var(--sub)'},sl)}
+}
+function ui(){
+[...$('#steps').children].forEach((li,i)=>li.className=i==st.ph?'on':i<st.ph?'ok':'');
+const B=(id,t,c='')=>`<button id="${id}" class="${c}">${t}</button>`;
+mk.style.display=st.ph==2?'':'none';
+if(st.ph==0){
+hint.textContent='ボタンを押しているあいだ、ごはんが増えます。ちょうどいい量でパッと離そう';
+ctl.innerHTML=B('hd','ごはんをよそう（長押し）','pri')+B('nx','つぎへ');
+bindHold($('#hd'),'rice');$('#nx').onclick=()=>{if(st.rice>3){st.ph=1;ui()}};
+}else if(st.ph==1){
+hint.textContent='タップするたびに塩をふります。味はお好みで';
+ctl.innerHTML=B('sa','塩をふる','pri')+B('nx','つぎへ');
+$('#sa').onclick=addSalt;$('#nx').onclick=()=>{st.ph=2;ui()};
+}else if(st.ph==2){
+hint.textContent='上の角を長押しでぎゅっ。まわして次の角へ。三角を目指そう';
+ctl.innerHTML=B('sq','ぎゅっ（長押し）','pri')+'<div class="row">'+B('ro','まわす')+B('dn','できあがり')+'</div>';
+bindHold($('#sq'),'sq');
+$('#ro').onclick=()=>{st.cur=(st.cur+2)%3;st.rot+=120;draw()};
+$('#dn').onclick=finish;
+}
+}
+function finish(){
+st.ph=3;st.hold=null;ui();ctl.innerHTML='';hint.textContent='';
+st.rot=Math.ceil(st.rot/360)*360;draw();nori.style.display='';
+const s=st.sharp,cl=x=>Math.max(0,Math.min(100,x));
+const rs=cl(100-Math.max(0,52-st.rice,st.rice-74)*3.2);
+const ss=cl(100-Math.max(0,3-st.salt,st.salt-5)*22);
+const dev=s.reduce((a,x)=>a+Math.abs(x-.85),0)/3;
+const sh=cl(100-dev*140-st.hard*60);
+const score=Math.round(rs*.3+ss*.25+sh*.45);
+const rank=score>=90?'S':score>=75?'A':score>=60?'B':score>=40?'C':'D';
+let cm;
+if(score>=90)cm='料亭の味。いますぐお店が開けます';
+else if(score>=75)cm='ふっくら三角。お昼に食べたい！';
+else{
+const w=[['r',rs],['s',ss],['h',sh]].sort((a,b)=>a[1]-b[1])[0][0];
+if(w=='r')cm=st.rice<52?'ごはん不足。ミニおにぎりの完成です':'ごはんの山。これはもう丼です';
+else if(w=='s')cm=st.salt==0?'塩なし。お米の味だけがします':st.salt<3?'うす味。塩がどこかへ旅に出ました':'しょっぱい！海を一口食べた気分です';
+else if(st.hard>.5)cm='握りすぎてお米の粒が消えました';
+else if(dev>0&&s.reduce((a,x)=>a+x,0)/3<.5)cm='まんまる。おにぎりというよりお団子です';
+else if(s.some(x=>x>1.15))cm='角がつぶれました。三角を目指したはずが…';
+else cm='角の尖りがバラバラ。味のある形です';
+}
+R={rank,score,cm};
+const bar=(n,v)=>`<div class="bar"><span>${n}</span><i style="--w:${Math.round(v)}%"></i><b>${Math.round(v)}</b></div>`;
+res.innerHTML=`<div class="top"><div class="rk">${rank}</div><div class="sc">${score}点</div></div><p class="cm">${cm}</p>`+bar('ごはん',rs)+bar('しお',ss)+bar('かたち',sh)+'<button id="re" class="pri">もう一回にぎる</button>';
+res.hidden=false;
+$('#re').onclick=reset;
+}
+let t0=performance.now();
+requestAnimationFrame(function loop(t){
+const dt=Math.min((t-t0)/1000,.05);t0=t;
+if(st.hold=='rice'){st.rice=Math.min(100,st.rice+45*dt);draw()}
+else if(st.hold=='sq'){st.hv+=dt;st.sharp[st.cur]+=dt*.9;if(st.hv>1.1)st.hard+=dt*.9;draw()}
+requestAnimationFrame(loop);
+});
+reset();
+</script></body></html>
